@@ -1,0 +1,13 @@
+flask
+flask-cors
+gunicorn
+insightface
+onnxruntime
+opencv-python-headless
+pillow
+pillow-heif
+numpy
+scipy
+scikit-image
+tqdm
+requests

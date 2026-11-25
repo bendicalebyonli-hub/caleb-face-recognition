@@ -11,7 +11,7 @@ const CONFIG = {
   DEFAULT_API_URL: window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
     ? window.location.origin
     : (window.location.origin.includes('vercel.app') 
-        ? 'https://saviour-face-recognition.onrender.com' 
+        ? 'https://caleb-face-recognition.onrender.com' 
         : window.location.origin),
   STORAGE_KEY_API: 'CALEB_API_BASE',
   STORAGE_KEY_SOUND: 'CALEB_SOUND_ENABLED',

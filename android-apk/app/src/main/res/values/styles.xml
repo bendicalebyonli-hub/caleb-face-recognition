@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.CalebFaceID" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">#070a12</item>
+        <item name="android:statusBarColor">#070a12</item>
+        <item name="android:navigationBarColor">#0d1322</item>
+    </style>
+</resources>
