@@ -1,23 +1,27 @@
-const CACHE_NAME = 'caleb-face-id-v2.0.0';
+const CACHE_NAME = 'caleb-face-id-v2.1.0';
 const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './style.css',
-  './app.js',
-  './manifest.webmanifest',
-  './manifest.json',
-  './icons/favicon.svg',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/apple-touch-icon.png',
-  './icons/icon-maskable.png'
+  '/',
+  '/style.css',
+  '/app.js',
+  '/manifest.webmanifest',
+  '/icons/favicon.svg',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/icons/apple-touch-icon.png',
+  '/icons/icon-maskable.png'
 ];
 
 // Install Event
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
+    caches.open(CACHE_NAME).then(async (cache) => {
+      for (const asset of ASSETS_TO_CACHE) {
+        try {
+          await cache.add(asset);
+        } catch (err) {
+          console.warn('SW cache.add skipped asset:', asset, err);
+        }
+      }
     }).then(() => self.skipWaiting())
   );
 });
@@ -46,14 +50,14 @@ self.addEventListener('fetch', (event) => {
       url.pathname.includes('/status') || 
       url.pathname.includes('/enroll') ||
       url.hostname.includes('onrender.com') ||
-      url.hostname.includes('railway.app')) {
+      url.hostname.includes('railway.app') ||
+      url.port === '5000') {
     return;
   }
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Fetch fresh version in background
         fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             caches.open(CACHE_NAME).then((cache) => {
@@ -63,7 +67,7 @@ self.addEventListener('fetch', (event) => {
         }).catch(() => {});
         return cachedResponse;
       }
-      return fetch(event.request);
+      return fetch(event.request).catch(() => caches.match('/'));
     })
   );
 });
