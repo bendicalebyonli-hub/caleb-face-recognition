@@ -31,6 +31,9 @@ let state = {
   activeTab: 'scanner',
   scanMode: 'manual', // 'manual' | 'auto'
   facingMode: 'user', // 'user' | 'environment'
+  availableCameras: [],
+  selectedCameraIndex: 0,
+  currentDeviceId: null,
   cameraStream: null,
   torchActive: false,
   isScanning: false,
@@ -227,7 +230,29 @@ async function initCamera() {
   if (btnTorch) btnTorch.addEventListener('click', toggleTorch);
   if (btnShutter) btnShutter.addEventListener('click', triggerManualScan);
 
+  await discoverCameras();
   await startCameraStream();
+}
+
+async function discoverCameras() {
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    state.availableCameras = devices.filter(d => d.kind === 'videoinput');
+    
+    // Smart selection: prioritize physical/integrated webcams, avoid disconnected virtual cameras (Iriun, OBS, DroidCam)
+    if (state.availableCameras.length > 1) {
+      const realCamIdx = state.availableCameras.findIndex(d => {
+        const lbl = (d.label || '').toLowerCase();
+        return !lbl.includes('iriun') && !lbl.includes('virtual') && !lbl.includes('obs') && !lbl.includes('droidcam');
+      });
+      if (realCamIdx !== -1) {
+        state.selectedCameraIndex = realCamIdx;
+      }
+    }
+  } catch (e) {
+    console.warn('Camera discovery notice:', e);
+  }
 }
 
 async function startCameraStream() {
@@ -246,21 +271,47 @@ async function startCameraStream() {
 
   try {
     if (prompt) prompt.textContent = 'Connecting Camera Sensor...';
-    state.cameraStream = await navigator.mediaDevices.getUserMedia({
+
+    const constraints = {
       audio: false,
       video: {
-        facingMode: state.facingMode,
         width: { ideal: 1280 },
         height: { ideal: 720 }
       }
-    });
+    };
+
+    if (state.availableCameras && state.availableCameras.length > 0) {
+      const chosen = state.availableCameras[state.selectedCameraIndex % state.availableCameras.length];
+      if (chosen && chosen.deviceId) {
+        constraints.video.deviceId = { exact: chosen.deviceId };
+        state.currentDeviceId = chosen.deviceId;
+      } else {
+        constraints.video.facingMode = state.facingMode;
+      }
+    } else {
+      constraints.video.facingMode = state.facingMode;
+    }
+
+    state.cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
 
     if (video) {
       video.srcObject = state.cameraStream;
-      video.classList.toggle('rear-camera', state.facingMode !== 'user');
+      const track = state.cameraStream.getVideoTracks()[0];
+      const trackSettings = track && track.getSettings ? track.getSettings() : {};
+      const lbl = (track && track.label ? track.label : '').toLowerCase();
+      
+      const isFront = trackSettings.facingMode === 'user' || lbl.includes('front') || lbl.includes('integrated') || lbl.includes('internal') || state.facingMode === 'user';
+      video.classList.toggle('rear-camera', !isFront);
     }
 
-    if (prompt) prompt.textContent = 'Align Caleb\'s Face In Viewfinder';
+    // Refresh device list once permission is granted so device labels appear
+    if (state.availableCameras.length === 0 || !state.availableCameras[0].label) {
+      await discoverCameras();
+    }
+
+    const currentTrack = state.cameraStream.getVideoTracks()[0];
+    const activeLabel = currentTrack && currentTrack.label ? currentTrack.label : 'Camera';
+    if (prompt) prompt.textContent = `Align Caleb's Face In Viewfinder (${activeLabel})`;
   } catch (err) {
     console.warn('Camera stream notice:', err);
     if (prompt) prompt.textContent = 'Tap Shutter to Snap with Camera';
@@ -268,7 +319,14 @@ async function startCameraStream() {
 }
 
 async function flipCamera() {
-  state.facingMode = (state.facingMode === 'user') ? 'environment' : 'user';
+  if (state.availableCameras && state.availableCameras.length > 1) {
+    state.selectedCameraIndex = (state.selectedCameraIndex + 1) % state.availableCameras.length;
+    const cam = state.availableCameras[state.selectedCameraIndex];
+    showLiveToast(`Camera: ${cam.label || 'Lens ' + (state.selectedCameraIndex + 1)}`);
+  } else {
+    state.facingMode = (state.facingMode === 'user') ? 'environment' : 'user';
+    showLiveToast(`Flipped to ${state.facingMode} camera`);
+  }
   playBiometricSound('scan');
   triggerHapticFeedback([40]);
   await startCameraStream();
@@ -562,41 +620,101 @@ function drawFaceBoundingBox(canvasId, bbox, imageSize, isMatch) {
   if (!canvas || !canvas.parentElement) return;
   const ctx = canvas.getContext('2d');
 
-  canvas.width = canvas.parentElement.clientWidth;
-  canvas.height = canvas.parentElement.clientHeight;
+  const containerW = canvas.parentElement.clientWidth;
+  const containerH = canvas.parentElement.clientHeight;
+  canvas.width = containerW;
+  canvas.height = containerH;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   const [imgW, imgH] = imageSize;
-  const scaleX = canvas.width / imgW;
-  const scaleY = canvas.height / imgH;
+  if (!imgW || !imgH || !bbox) return;
 
   const [x1, y1, x2, y2] = bbox;
-  const bx = x1 * scaleX;
-  const by = y1 * scaleY;
-  const bw = (x2 - x1) * scaleX;
-  const bh = (y2 - y1) * scaleY;
+  let bx, by, bw, bh;
 
-  const color = isMatch ? '#00f2fe' : '#ff0055';
+  if (canvasId === 'upload-overlay-canvas') {
+    // Exact object-fit: contain calculation for uploaded images
+    const imgRatio = imgW / imgH;
+    const containerRatio = containerW / containerH;
+    let renderW, renderH, offsetX, offsetY;
+
+    if (imgRatio > containerRatio) {
+      renderW = containerW;
+      renderH = containerW / imgRatio;
+      offsetX = 0;
+      offsetY = (containerH - renderH) / 2;
+    } else {
+      renderH = containerH;
+      renderW = containerH * imgRatio;
+      offsetX = (containerW - renderW) / 2;
+      offsetY = 0;
+    }
+
+    const scale = renderW / imgW;
+    bx = offsetX + x1 * scale;
+    by = offsetY + y1 * scale;
+    bw = (x2 - x1) * scale;
+    bh = (y2 - y1) * scale;
+
+  } else {
+    // Exact object-fit: cover calculation for camera viewfinder
+    const scale = Math.max(containerW / imgW, containerH / imgH);
+    const renderW = imgW * scale;
+    const renderH = imgH * scale;
+    const offsetX = (containerW - renderW) / 2;
+    const offsetY = (containerH - renderH) / 2;
+
+    bx = offsetX + x1 * scale;
+    by = offsetY + y1 * scale;
+    bw = (x2 - x1) * scale;
+    bh = (y2 - y1) * scale;
+
+    // In user facingMode (selfie/front webcam), video is mirrored with scaleX(-1)
+    const video = document.getElementById('camera-video');
+    const isMirrored = video && !video.classList.contains('rear-camera');
+    if (isMirrored) {
+      bx = containerW - (bx + bw);
+    }
+  }
+
+  // Draw clean, precise biometric face boundary that fits tightly
+  const color = isMatch ? '#00f5a0' : '#ff0055';
   ctx.strokeStyle = color;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2.5;
   ctx.shadowColor = color;
-  ctx.shadowBlur = 12;
+  ctx.shadowBlur = 10;
 
-  const cornerLen = Math.min(bw, bh) * 0.25;
+  // Outer bounding box
+  ctx.strokeRect(bx, by, bw, bh);
+
+  // Bold corner brackets for biometric HUD aesthetic
+  ctx.lineWidth = 4;
+  const cornerLen = Math.max(8, Math.min(bw, bh) * 0.22);
 
   ctx.beginPath();
+  // Top-Left
   ctx.moveTo(bx, by + cornerLen); ctx.lineTo(bx, by); ctx.lineTo(bx + cornerLen, by);
+  // Top-Right
   ctx.moveTo(bx + bw - cornerLen, by); ctx.lineTo(bx + bw, by); ctx.lineTo(bx + bw, by + cornerLen);
+  // Bottom-Left
   ctx.moveTo(bx, by + bh - cornerLen); ctx.lineTo(bx, by + bh); ctx.lineTo(bx + cornerLen, by + bh);
+  // Bottom-Right
   ctx.moveTo(bx + bw - cornerLen, by + bh); ctx.lineTo(bx + bw, by + bh); ctx.lineTo(bx + bw, by + bh - cornerLen);
   ctx.stroke();
 
-  ctx.fillStyle = isMatch ? 'rgba(0, 242, 254, 0.95)' : 'rgba(255, 0, 85, 0.95)';
-  ctx.font = 'bold 11px -apple-system, monospace';
-  const labelText = isMatch ? 'TARGET LOCK · CALEB YONLI (ID-001)' : 'UNRECOGNIZED TARGET · FAIL';
-  ctx.fillText(labelText, bx + 4, Math.max(14, by - 6));
+  // Floating biometric ID badge
+  ctx.shadowBlur = 0;
+  const labelText = isMatch ? 'TARGET LOCK: CALEB YONLI (ID-001)' : 'UNRECOGNIZED TARGET · ACCESS DENIED';
+  ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace';
+  const textW = ctx.measureText(labelText).width;
+  const badgeH = 20;
+  const badgeY = Math.max(badgeH + 4, by - 6);
 
-  setTimeout(() => ctx.clearRect(0, 0, canvas.width, canvas.height), 4000);
+  ctx.fillStyle = isMatch ? 'rgba(0, 245, 160, 0.95)' : 'rgba(255, 0, 85, 0.95)';
+  ctx.fillRect(bx, badgeY - badgeH + 4, textW + 14, badgeH);
+
+  ctx.fillStyle = '#060d17';
+  ctx.fillText(labelText, bx + 7, badgeY);
 }
 
 // ==========================================
