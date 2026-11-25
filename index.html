@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Caleb Yonli AI · Mobile Biometric Face ID</title>
+
+  <!-- PWA & Mobile Web Meta Tags -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#070a14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Caleb FaceID">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="Caleb FaceID">
+  <meta name="description" content="Mobile Deep Face Recognition & Biometric Attendance System using ArcFace 512-D ONNX for Caleb Yonli (ID-001).">
+
+  <!-- Core Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Ambient Backdrop -->
+  <div class="ambient-bg">
+    <div class="ambient-grid"></div>
+  </div>
+
+  <!-- Mobile Application Main Shell (Full Screen Mobile, Centered Desktop) -->
+  <div class="app-main-layout">
+
+    <!-- Top Cyberpunk Mobile Header -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-icon-badge">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+            <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+            <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+            <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+            <circle cx="12" cy="12" r="3.2"></circle>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>CALEB YONLI <span class="model-tag">512-D</span></h1>
+          <div class="system-status-indicator">
+            <span class="status-dot" id="header-status-dot"></span>
+            <span id="header-status-text">CONNECTING...</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Quick Install Button (Adds App Icon to Phone Home Screen) -->
+        <button class="btn-install-header" id="btn-install-header" onclick="triggerAppInstall()" title="Install as Mobile App">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Install</span>
+        </button>
+
+        <button class="btn-icon-round" id="btn-sound-toggle" title="Toggle Biometric Sound">
+          <svg id="sound-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+        </button>
+
+        <button class="btn-icon-round" id="btn-haptic-toggle" title="Toggle Vibration">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7 3 9 3 9h6s3-2 3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            <line x1="2" y1="8" x2="4" y2="8"></line>
+            <line x1="20" y1="8" x2="22" y2="8"></line>
+          </svg>
+        </button>
+
+        <button class="btn-icon-round" id="btn-open-settings" onclick="openSettingsModal()" title="API Config & Settings">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- PWA Install Banner (Mobile Phone Banner) -->
+    <div class="pwa-install-banner" id="pwa-install-banner">
+      <div class="pwa-banner-left">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00f2fe" stroke-width="2">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+          <line x1="12" y1="18" x2="12.01" y2="18"></line>
+        </svg>
+        <span>Install Caleb FaceID Mobile App on Home Screen</span>
+      </div>
+      <button class="pwa-banner-btn" id="btn-install-pwa" onclick="triggerAppInstall()">Install</button>
+    </div>
+
+    <!-- Main Dynamic Content Views Container -->
+    <main class="app-viewport">
+
+      <!-- ==========================================
+           VIEW 1: LIVE CAMERA HUD SCANNER
+           ========================================== -->
+      <section class="app-view active" id="view-scanner">
+        <div class="scanner-container">
+
+          <!-- Viewfinder Frame -->
+          <div class="camera-viewfinder">
+            <video id="camera-video" playsinline autoplay muted></video>
+            <canvas id="camera-canvas"></canvas>
+
+            <!-- Animated Sweeping Scan Beam -->
+            <div class="biometric-laser" id="biometric-laser"></div>
+
+            <!-- Cyberpunk Reticle Overlay -->
+            <div class="reticle-overlay" id="reticle-frame">
+              <div class="corner-bracket top-left"></div>
+              <div class="corner-bracket top-right"></div>
+              <div class="corner-bracket bottom-left"></div>
+              <div class="corner-bracket bottom-right"></div>
+              <div class="reticle-crosshair"></div>
+              <div class="face-target-ellipse"></div>
+            </div>
+
+            <!-- Camera Viewfinder HUD Badges -->
+            <div class="viewfinder-top-bar">
+              <span class="hud-chip live-chip">
+                <span class="pulse-indicator"></span> LIVE CAM
+              </span>
+              <span class="hud-chip model-chip">ArcFace 512-D</span>
+            </div>
+
+            <!-- Target ID Lock Tag -->
+            <div class="viewfinder-bottom-hud">
+              <span class="target-name-tag">TARGET: CALEB YONLI (ID-001)</span>
+              <span class="cam-resolution" id="cam-resolution">640x640 ONNX</span>
+            </div>
+
+            <!-- Flash simulation -->
+            <div class="camera-flash-overlay" id="camera-flash"></div>
+          </div>
+
+          <!-- Bottom Camera Controls HUD -->
+          <div class="scanner-controls-panel">
+
+            <!-- Mode Selector Switch: Snap vs Auto-Scan -->
+            <div class="scan-mode-toggle">
+              <button class="mode-tab-btn active" id="btn-mode-manual" onclick="setScanMode('manual')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+                <span>Manual Snap</span>
+              </button>
+              <button class="mode-tab-btn" id="btn-mode-auto" onclick="setScanMode('auto')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+                <span>Auto-Scan Loop</span>
+              </button>
+            </div>
+
+            <!-- Viewfinder Prompt -->
+            <p class="viewfinder-prompt" id="prompt-text">Align Caleb's Face In Viewfinder</p>
+
+            <!-- Shutter & Tool Action Row -->
+            <div class="shutter-row">
+              <button class="btn-sub-action" id="btn-flip-camera" title="Flip Camera">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 16v-4a8 8 0 0 0-16 0v4"></path>
+                  <polyline points="7 13 4 16 1 13"></polyline>
+                  <polyline points="17 19 20 16 23 19"></polyline>
+                </svg>
+              </button>
+
+              <!-- Central Biometric Shutter Button -->
+              <div class="shutter-ring" id="shutter-ring">
+                <button class="btn-shutter" id="btn-shutter" title="Capture & Verify">
+                  <div class="shutter-core">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                      <circle cx="12" cy="12" r="3"></circle>
+                      <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                      <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                      <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                      <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                    </svg>
+                  </div>
+                </button>
+              </div>
+
+              <button class="btn-sub-action" id="btn-torch-toggle" title="Toggle Flashlight">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Quick Action Row: Demo Scan Simulation -->
+            <div class="quick-helpers">
+              <button class="btn-chip-action" id="btn-demo-scan" onclick="triggerDemoVerification()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00f2fe" stroke-width="2">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                <span>Demo Verify (Caleb Yonli)</span>
+              </button>
+              <button class="btn-chip-action" id="btn-demo-fail" onclick="triggerDemoFailVerification()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff0055" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                <span>Demo Reject (Unknown)</span>
+              </button>
+            </div>
+
+            <!-- Native Camera Input Fallback (for mobile browsers that block live mediaStream) -->
+            <input type="file" id="native-camera-input" accept="image/*" capture="user" style="display:none;" onchange="handleNativeCameraCapture(event)">
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           VIEW 2: PHOTO UPLOAD & RECOGNITION
+           ========================================== -->
+      <section class="app-view" id="view-upload">
+        <div class="upload-view-container">
+
+          <div class="view-intro">
+            <h2>PHOTO RECOGNITION</h2>
+            <p>Upload any high-res image to extract 512-D vectors & detect Caleb Yonli</p>
+          </div>
+
+          <!-- Upload Dropzone & File Container -->
+          <div class="upload-dropzone" id="upload-dropzone" onclick="document.getElementById('file-picker').click()">
+            <input type="file" id="file-picker" accept="image/*" style="display:none;" onchange="handleFilePicked(event)">
+
+            <!-- Idle Dropzone State -->
+            <div class="dropzone-idle-content" id="dropzone-idle">
+              <div class="upload-icon-circle">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#00f2fe" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </div>
+              <h3>Choose Photo Or Take Snapshot</h3>
+              <p>Supports JPG, PNG, WEBP, HEIC (Max 25MB)</p>
+              <div class="browse-badge">Tap To Browse Device</div>
+            </div>
+
+            <!-- Image Loaded Preview -->
+            <div class="preview-container" id="preview-container">
+              <img id="image-preview" src="" alt="Scan Target Preview">
+              <canvas id="upload-overlay-canvas"></canvas>
+              <div class="upload-scan-overlay" id="upload-scan-overlay">
+                <div class="biometric-laser active"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upload Action Bar -->
+          <div class="upload-actions">
+            <button class="btn-primary-gradient" id="btn-scan-upload" onclick="analyzeUploadedPhoto()" disabled>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+              </svg>
+              <span id="btn-scan-upload-text">Scan & Verify Identity</span>
+            </button>
+
+            <button class="btn-secondary-flat" id="btn-clear-upload" onclick="clearUploadedPhoto()">
+              <span>Clear / Select Another</span>
+            </button>
+          </div>
+
+          <!-- Quick Test Photo Samples -->
+          <div class="quick-samples-card">
+            <h4>QUICK TEST PRESETS:</h4>
+            <div class="samples-pill-row">
+              <button class="sample-pill" onclick="loadSamplePreset('desk')">Desk (Green Shirt)</button>
+              <button class="sample-pill" onclick="loadSamplePreset('studio')">Studio (Blue Pants)</button>
+              <button class="sample-pill" onclick="loadSamplePreset('hedge')">Formal (Tie & Glasses)</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           VIEW 3: ATTENDANCE HISTORY AUTO-LOG
+           ========================================== -->
+      <section class="app-view" id="view-history">
+        <div class="history-view-container">
+
+          <!-- View Header & Stats -->
+          <div class="history-header">
+            <div>
+              <h2>ATTENDANCE AUDIT LOG</h2>
+              <p>Auto-logged biometric verification entries</p>
+            </div>
+            <button class="btn-export-top" onclick="exportHistoryCsv()" title="Download CSV Spreadsheet">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Export CSV</span>
+            </button>
+          </div>
+
+          <!-- Quick Metric Highlights -->
+          <div class="stats-overview-grid">
+            <div class="stat-card">
+              <span class="stat-number" id="stat-total-scans">0</span>
+              <span class="stat-label">TOTAL SCANS</span>
+            </div>
+            <div class="stat-card pass">
+              <span class="stat-number" id="stat-verified-count">0</span>
+              <span class="stat-label">VERIFIED (PASS)</span>
+            </div>
+            <div class="stat-card fail">
+              <span class="stat-number" id="stat-unmatched-count">0</span>
+              <span class="stat-label">REJECTED (FAIL)</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-number" id="stat-rate-val">0%</span>
+              <span class="stat-label">PASS RATE</span>
+            </div>
+          </div>
+
+          <!-- Search & Filter Controls -->
+          <div class="history-controls-row">
+            <div class="filter-tabs">
+              <button class="filter-btn active" id="filter-all" onclick="setHistoryFilter('all')">All</button>
+              <button class="filter-btn" id="filter-pass" onclick="setHistoryFilter('pass')">Pass</button>
+              <button class="filter-btn" id="filter-fail" onclick="setHistoryFilter('fail')">Fail</button>
+            </div>
+
+            <button class="btn-clear-history" onclick="confirmClearHistory()" title="Clear Local Log">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              <span>Clear</span>
+            </button>
+          </div>
+
+          <!-- Dynamic History List -->
+          <div class="history-list" id="history-list">
+            <!-- Populated via app.js -->
+            <div class="empty-history-state" id="empty-history-state">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.8">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <p>No biometric scans recorded yet</p>
+              <span>Snap a photo or run auto-scan to automatically log attendance</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ==========================================
+         BIOMETRIC RESULT BOTTOM SHEET (PASS / FAIL)
+         ========================================== -->
+    <div class="result-bottom-sheet" id="result-bottom-sheet">
+      <div class="sheet-handle" onclick="dismissResultSheet()"></div>
+
+      <div class="result-card-inner">
+
+        <!-- Top Badge (Pass / Fail) -->
+        <div class="result-badge pass" id="result-badge">
+          <span class="badge-dot"></span>
+          <span class="badge-text" id="result-badge-text">IDENTITY VERIFIED · PASS</span>
+        </div>
+
+        <!-- Subject Identity Identity Block -->
+        <div class="result-subject-block">
+          <div class="result-avatar-halo" id="result-avatar-halo">CY</div>
+          <div class="result-subject-details">
+            <h3 id="result-subject-name">Caleb Yonli</h3>
+            <p id="result-subject-meta">ID: ID-001 · ENROLLED PRINCIPAL</p>
+          </div>
+        </div>
+
+        <!-- Animated Confidence Gauge Bar -->
+        <div class="confidence-container">
+          <div class="confidence-label-row">
+            <span>Biometric Confidence</span>
+            <span class="confidence-val" id="result-conf-val">99.4%</span>
+          </div>
+          <div class="confidence-bar-track">
+            <div class="confidence-bar-fill" id="confidence-bar-fill" style="width: 99.4%;"></div>
+          </div>
+        </div>
+
+        <!-- Biometric Metric Grid -->
+        <div class="biometric-metrics-grid">
+          <div class="metric-tile">
+            <span class="metric-label">COSINE DIST</span>
+            <span class="metric-value" id="result-dist-val">0.1840</span>
+          </div>
+          <div class="metric-tile">
+            <span class="metric-label">DET SCORE</span>
+            <span class="metric-value" id="result-det-val">84.4%</span>
+          </div>
+          <div class="metric-tile">
+            <span class="metric-label">LATENCY</span>
+            <span class="metric-value" id="result-latency-val">45ms</span>
+          </div>
+          <div class="metric-tile">
+            <span class="metric-label">STATUS</span>
+            <span class="metric-value" id="result-match-status">MATCH</span>
+          </div>
+        </div>
+
+        <!-- Action Row: View Raw JSON & Dismiss -->
+        <div class="sheet-action-row">
+          <button class="btn-view-json" onclick="openJsonModal(state.latestJsonResponse)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="16 18 22 12 16 6"></polyline>
+              <polyline points="8 6 2 12 8 18"></polyline>
+            </svg>
+            <span>{ } View Raw JSON</span>
+          </button>
+
+          <button class="btn-dismiss-sheet" onclick="dismissResultSheet()">Dismiss</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL: LIVE RAW JSON RESPONSE VIEWER
+         ========================================== -->
+    <div class="modal-backdrop" id="modal-json">
+      <div class="modal-card json-modal-card">
+        <div class="modal-header">
+          <div class="modal-title-row">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00f2fe" stroke-width="2">
+              <polyline points="16 18 22 12 16 6"></polyline>
+              <polyline points="8 6 2 12 8 18"></polyline>
+            </svg>
+            <h3>Live Raw JSON Response</h3>
+          </div>
+          <button class="btn-close-modal" onclick="closeJsonModal()">×</button>
+        </div>
+
+        <div class="json-code-container">
+          <pre id="json-code-view"><code>{ }</code></pre>
+        </div>
+
+        <div class="modal-actions-row">
+          <button class="btn-primary-gradient" onclick="copyJsonToClipboard()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span id="btn-copy-json-text">Copy JSON</span>
+          </button>
+          <button class="btn-secondary-flat" onclick="downloadCurrentJson()">Download</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL: SETTINGS & BACKEND CONFIG
+         ========================================== -->
+    <div class="modal-backdrop" id="modal-settings">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>SYSTEM SETTINGS & API</h3>
+          <button class="btn-close-modal" onclick="closeSettingsModal()">×</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="setting-group">
+            <label for="input-api-url">REST API Base Endpoint</label>
+            <div class="input-with-button">
+              <input type="text" id="input-api-url" placeholder="https://your-backend.onrender.com" spellcheck="false">
+              <button class="btn-input-action" onclick="pingBackendApi()">Test</button>
+            </div>
+            <p class="setting-hint">Default: Render / Localhost (http://localhost:5000)</p>
+          </div>
+
+          <div class="setting-group">
+            <div class="slider-header">
+              <label for="input-threshold">ArcFace Cosine Match Threshold</label>
+              <span id="threshold-val">0.4800</span>
+            </div>
+            <input type="range" id="input-threshold" min="0.25" max="0.65" step="0.01" value="0.48" oninput="updateThresholdDisplay(this.value)">
+            <p class="setting-hint">Cosine distance &le; threshold indicates confirmed Caleb Yonli match.</p>
+          </div>
+
+          <div class="setting-group-switches">
+            <div class="switch-row">
+              <span>Synthesizer Biometric Sound</span>
+              <input type="checkbox" id="setting-sound" checked onchange="toggleSettingSound(this.checked)">
+            </div>
+            <div class="switch-row">
+              <span>Haptic Vibration Feedback</span>
+              <input type="checkbox" id="setting-haptic" checked onchange="toggleSettingHaptic(this.checked)">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions-row">
+          <button class="btn-primary-gradient" onclick="saveSettings()">Save & Close</button>
+          <button class="btn-secondary-flat" onclick="resetDefaultSettings()">Reset Default</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         BOTTOM CYBERPUNK MOBILE NAVIGATION BAR
+         ========================================== -->
+    <nav class="app-bottom-nav">
+      <button class="nav-tab-btn active" id="nav-scanner" onclick="switchTab('scanner')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+          <circle cx="12" cy="13" r="4"></circle>
+        </svg>
+        <span>Scanner</span>
+      </button>
+
+      <button class="nav-tab-btn" id="nav-upload" onclick="switchTab('upload')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <span>Upload</span>
+      </button>
+
+      <button class="nav-tab-btn" id="nav-history" onclick="switchTab('history')">
+        <div class="badge-icon-wrapper">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          <span class="nav-count-badge" id="nav-history-badge">0</span>
+        </div>
+        <span>Attendance</span>
+      </button>
+    </nav>
+
+    <!-- Live Toast Notification Element -->
+    <div class="live-toast" id="live-toast">System Ready</div>
+
+  </div>
+
+  <!-- Core Mobile Application Script -->
+  <script src="app.js"></script>
+</body>
+</html>

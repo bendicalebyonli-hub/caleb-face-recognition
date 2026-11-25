@@ -1,0 +1,13 @@
+# Large datasets and archives (GitHub limit is 100MB)
+images.rar
+images/
+*.rar
+*.zip
+
+# Python environments and cache
+.venv/
+__pycache__/
+*.pyc
+
+# Local cache
+.insightface/
