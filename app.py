@@ -455,8 +455,17 @@ load_database()
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     print("=" * 60)
-    print(f"⚡ Caleb Yonli Face Recognition API Server Active")
+    print(f"⚡ Caleb Yonli Production Biometric Server Active")
     print(f"🌐 Local Address: http://localhost:{port}")
     print(f"📱 REST Endpoints: /status | /recognize | /recognize_base64")
+    print(f"🔒 Server Engine: Production WSGI (Waitress Multi-Threaded)")
     print("=" * 60)
-    app.run(debug=False, host="0.0.0.0", port=port)
+    try:
+        from waitress import serve
+        serve(app, host="0.0.0.0", port=port, threads=6)
+    except ImportError:
+        import logging
+        import flask.cli
+        flask.cli.show_server_banner = lambda *args: None
+        logging.getLogger('werkzeug').setLevel(logging.ERROR)
+        app.run(debug=False, host="0.0.0.0", port=port)
